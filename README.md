@@ -16,7 +16,7 @@ sequenceDiagram
   participant SensorTool
   participant FitbitTool
   participant MedicalRecordRAG
-  participant LLM              %% new
+  participant LLM
   participant IngestionEndpoint
   participant SensorEntity
   participant MongoDB
