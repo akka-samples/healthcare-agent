@@ -2,8 +2,7 @@
 
 ## Description
 
-A personal health advisor agent, integrating data from various sources (fitness trackers, medical records and other sensors)
-to provide real-time health insights, personalized recommendations and immediate support.
+Personal Health Agent with data from fitness trackers, medical records and other sensors.
 
 ## Architecture
 
@@ -89,9 +88,15 @@ Execute reliably. Durable workflows that ensure agent actions and LLM calls exec
 ## Usage
 
 Setup Environment Variables
-
 ```text
-Copy the `.env.example` file to `.env` and set the following environment variables:
+OPENAI_API_KEY=YOUR-OPENAI-API-KEY-HERE
+
+MONGODB_ATLAS_URI=YOUR-CONNECTION-STRING-HERE
+
+# Fitbit Access Token
+# (FitBits API does not support client credentials flow, so you need to use the authorization code flow that requires user interaction.)
+# Retrieve your Tokens manually via https://dev.fitbit.com/build/reference/web-api/troubleshooting-guide/oauth2-tutorial/
+FITBIT_ACCESS_TOKEN=YOUR-FITBIT-ACCESS-TOKEN
 ```
 
 Start the service locally:
