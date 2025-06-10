@@ -10,7 +10,7 @@ public class OpenAiUtils {
 
   public static OpenAiEmbeddingModel embeddingModel() {
     return OpenAiEmbeddingModel.builder()
-      .apiKey(KeyUtils.readOpenAiKey())
+      .apiKey(System.getenv("OPENAI_API_KEY"))
       .modelName(embeddingModelName)
       .build();
   }
