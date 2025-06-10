@@ -1,9 +1,8 @@
-package io.akka.health.fitbit.model;
+package io.akka.health.fitbit.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**

@@ -4,7 +4,7 @@ import akka.http.javadsl.model.headers.HttpCredentials;
 import akka.javasdk.http.HttpClient;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.akka.health.fitbit.model.*;
+import io.akka.health.fitbit.domain.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

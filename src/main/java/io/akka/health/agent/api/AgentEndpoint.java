@@ -7,7 +7,7 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.http.HttpResponses;
-import io.akka.health.agent.model.HealthAgentRequest;
+import io.akka.health.agent.domain.HealthAgentRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

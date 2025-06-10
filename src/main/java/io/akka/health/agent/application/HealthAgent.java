@@ -9,9 +9,8 @@ import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.client.ComponentClient;
 import io.akka.health.fitbit.FitbitClient;
 
-import com.mongodb.client.MongoClient;
-import io.akka.health.fitbit.model.DailyActivitySummary;
-import io.akka.health.agent.model.HealthAgentRequest;
+import io.akka.health.fitbit.domain.DailyActivitySummary;
+import io.akka.health.agent.domain.HealthAgentRequest;
 import io.akka.health.ingest.application.SensorView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
