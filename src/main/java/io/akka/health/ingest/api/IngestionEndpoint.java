@@ -1,6 +1,7 @@
 package io.akka.health.ingest.api;
 
 import com.mongodb.client.MongoClient;
+import dev.langchain4j.store.embedding.mongodb.MongoDbEmbeddingStore;
 import io.akka.health.common.MongoDbUtils;
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
@@ -25,15 +26,11 @@ public class IngestionEndpoint {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
   private final ComponentClient componentClient;
-    private final MongoDbUtils.MongoDbConfig mongoDbConfig;
+  private final MongoDbEmbeddingStore embeddingStore;
 
-  public IngestionEndpoint(ComponentClient componentClient, MongoClient mongoClient ) {
+  public IngestionEndpoint(ComponentClient componentClient, MongoDbEmbeddingStore embeddingStore) {
     this.componentClient = componentClient;
-    this.mongoDbConfig = new MongoDbUtils.MongoDbConfig(
-            mongoClient,
-            "health",
-            "medicalrecord",
-            "medicalrecord-index");
+    this.embeddingStore = embeddingStore;
   }
 
   @Post("/sensor")
@@ -48,7 +45,7 @@ public class IngestionEndpoint {
   @Post("/medical-record")
   public CompletionStage<HttpResponse> ingestMedicalRecord(IngestMedicalRecordRequest request) {
     logger.info("Received medical record for user {}: {}", request.userId, request.data);
-    Index index = new Index(mongoDbConfig);
+    Index index = new Index(embeddingStore);
     return index.indexMedicalRecord(request.data)
             .thenApply(done -> HttpResponses.accepted());
   }

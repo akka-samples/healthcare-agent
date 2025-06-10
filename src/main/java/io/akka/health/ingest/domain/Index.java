@@ -24,9 +24,9 @@ public class Index {
   private final MongoDbEmbeddingStore embeddingStore;
   private final DocumentSplitter splitter;
 
-  public Index(MongoDbUtils.MongoDbConfig mongoDbConfig) {
+  public Index(MongoDbEmbeddingStore embeddingStore) {
     this.embeddingModel = OpenAiUtils.embeddingModel();
-    this.embeddingStore = MongoDbUtils.mongoDbEmbeddingStore(mongoDbConfig);
+    this.embeddingStore = embeddingStore;
     this.splitter = new DocumentByCharacterSplitter(500, 50);
   }
 

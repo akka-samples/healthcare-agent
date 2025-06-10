@@ -35,11 +35,11 @@ public class HealthAgent extends Agent {
   private final SensorTool sensorTool;
   private final MedicalRecordRAG medicalRecordRAG;
 
-  public HealthAgent(ComponentClient componentClient, MongoClient mongoClient, FitbitClient fitbitClient) {
+  public HealthAgent(ComponentClient componentClient, MedicalRecordRAG medicalRecordRAG, FitbitClient fitbitClient) {
     this.componentClient = componentClient;
     this.fitbitTool = new FitbitTool(fitbitClient);
     this.sensorTool = new SensorTool(componentClient);
-    this.medicalRecordRAG = new MedicalRecordRAG(mongoClient);
+    this.medicalRecordRAG = medicalRecordRAG;
   }
 
   public Agent.Effect<String> ask(HealthAgentRequest request) {
