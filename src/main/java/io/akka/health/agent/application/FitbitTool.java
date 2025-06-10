@@ -1,6 +1,5 @@
 package io.akka.health.agent.application;
 
-import dev.langchain4j.agent.tool.Tool;
 import io.akka.health.fitbit.FitbitClient;
 import io.akka.health.fitbit.model.*;
 import org.slf4j.Logger;
@@ -19,7 +18,6 @@ public class FitbitTool {
         this.fitbitClient = fitbitClient;
     }
 
-    @Tool("Get resting heart rate for a specific date")
     public Integer restingHeartRate(LocalDate date) {
         logger.info("Getting resting heart rate for date {}", date);
 
@@ -33,7 +31,6 @@ public class FitbitTool {
         return value.restingHeartRate();
     }
 
-    @Tool("Check if heart rate (in bpm) exceeded the range for a specific date. If exceeded, it returns the value that exceeded the range the most. Otherwise it reurns 0.")
     public Integer isHeartRateOutsideSafeRange(LocalDate date, int minThreshold, int maxThreshold) {
         logger.info("Checking heart rate for date {} with thresholds {} - {}", date, minThreshold, maxThreshold);
 
@@ -67,7 +64,6 @@ public class FitbitTool {
         return mostExtremeValue != null ? mostExtremeValue : 0;
     }
 
-    @Tool("Get total active minutes for a specific date range (usually one week).")
     public Integer getActiveMinutesInWeek(LocalDate startDate, LocalDate endDate) {
         logger.info("Getting active minutes from {} to {}", startDate, endDate);
         List<ActiveZoneMinutesData> list = new ArrayList<>();
@@ -93,7 +89,6 @@ public class FitbitTool {
         return totalActiveMinutes;
     }
 
-    @Tool("Get amount of sleep hours for a specific date.")
     public Double getSleepHoursForDay(LocalDate date) {
         logger.info("Getting sleep hours for date {}", date);
 
@@ -106,7 +101,6 @@ public class FitbitTool {
         }
     }
 
-    @Tool("Get amount of REM sleep in minutes for a specific date.")
     public Integer getRemSleepMinutes(LocalDate date) {
         logger.info("Getting REM sleep minutes for date {}", date);
 
@@ -126,7 +120,6 @@ public class FitbitTool {
         return totalRemMinutes;
     }
 
-    @Tool("Get all sport activities (sport, gym, aerobic) for a specific date range (usually one week).")
     public List<DailyActivitySummary.Activity> getSportActivitiesInWeek(LocalDate startDate, LocalDate endDate) {
         logger.info("Getting sport activities from {} to {}", startDate, endDate);
         List<DailyActivitySummary> list = new ArrayList<>();
@@ -159,7 +152,6 @@ public class FitbitTool {
         return sportActivities;
     }
 
-    @Tool("Get number of steps walked for a specific date.")
     public Integer getStepsForDay(LocalDate date) {
         logger.info("Getting steps for date {}", date);
 
