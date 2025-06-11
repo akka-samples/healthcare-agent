@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Agent - Modern UI</title>
+    <!-- Use latest stable Tailwind v3 CDN -->
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.2/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.1/js.cookie.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
+    <style>
+        html, body, #root { height: 100%; }
+        body { min-height: 100vh; }
+        .typing-animation::after { content: '▋'; animation: blink 1s step-start infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        body, .font-sans { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+    </style>
+</head>
+<body class="bg-black text-white font-sans">
+<div id="root" class="h-full"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+const { marked } = window;
+const { Cookies } = window;
+const { v4: uuidv4 } = window.uuid;
+const USER_COOKIE = "ai_chat_user_id";
+const parseSSE = (data) => {
+    if (!data) return null;
+    if (data.startsWith('data:')) {
+        return data.substring(5).trim();
+    }
+    return data;
+};
+function App() {
+    const [userId, setUserId] = useState("");
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [error, setError] = useState("");
+    useEffect(() => {
+        const savedUserId = Cookies.get(USER_COOKIE);
+        if (savedUserId) {
+            setUserId(savedUserId);
+            setIsLoggedIn(true);
+        }
+    }, []);
+    const handleLogin = () => {
+        if (userId.trim().length < 3) {
+            setError("User ID must be at least 3 characters");
+            return;
+        }
+        Cookies.set(USER_COOKIE, userId, { expires: 7 });
+        setError("");
+        setIsLoggedIn(true);
+    };
+    const handleLogout = () => {
+        Cookies.remove(USER_COOKIE);
+        setUserId("");
+        setIsLoggedIn(false);
+    };
+    return (
+        <div className="flex h-screen w-screen bg-black">
+            {isLoggedIn ? (
+                <ChatUI userId={userId} onLogout={handleLogout} />
+            ) : (
+                <LoginScreen userId={userId} setUserId={setUserId} handleLogin={handleLogin} error={error} />
+            )}
+        </div>
+    );
+}
+function LoginScreen({ userId, setUserId, handleLogin, error }) {
+    return (
+        <div className="m-auto w-full max-w-md bg-neutral-900 rounded-2xl shadow-xl p-10 flex flex-col items-center">
+            <h2 className="text-2xl font-bold mb-2 text-white">Health Agent</h2>
+            <p className="text-neutral-400 mb-6">Enter a unique User ID to continue</p>
+            <input
+                type="text"
+                value={userId}
+                onChange={e => setUserId(e.target.value)}
+                onKeyPress={e => e.key === 'Enter' && handleLogin()}
+                placeholder="User ID"
+                className="w-full px-4 py-3 rounded-xl border border-neutral-700 bg-black text-white text-lg mb-4 focus:outline-none focus:ring-2 focus:ring-white"
+                autoFocus
+            />
+            {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
+            <button
+                onClick={handleLogin}
+                className="w-full py-3 rounded-xl bg-white text-black font-semibold text-lg hover:bg-neutral-200 transition"
+            >Continue</button>
+        </div>
+    );
+}
+function ChatUI({ userId, onLogout }) {
+    const [sessions, setSessions] = useState([]);
+    const [currentSession, setCurrentSession] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    useEffect(() => { fetchSessions(); }, [userId]);
+    const fetchSessions = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch(`/users/${userId}/sessions`);
+            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+            const data = await response.json();
+            const transformedSessions = data.sessions.map(session => ({
+                id: session.sessionId,
+                title: `Conversation from ${formatDate(session.creationDate)}`,
+                timestamp: new Date(session.creationDate).toISOString(),
+                conversationHistory: session.messages.map(msg => ({
+                    type: msg.origin,
+                    message: msg.message
+                }))
+            }));
+            setSessions(transformedSessions || []);
+        } catch (err) {
+            setError("Failed to load your previous conversations");
+            setSessions([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+    const formatDate = (timestamp) => {
+        const date = new Date(timestamp);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    };
+    const createNewSession = () => {
+        const newSession = {
+            id: uuidv4(),
+            title: "New Conversation",
+            timestamp: new Date().toISOString(),
+            conversationHistory: []
+        };
+        setSessions([newSession, ...sessions]);
+        setCurrentSession(newSession);
+    };
+    const openSession = (session) => setCurrentSession(session);
+    const saveSession = (updatedSession) => {
+        const updatedSessions = sessions.map(s => s.id === updatedSession.id ? updatedSession : s);
+        setSessions(updatedSessions);
+        setCurrentSession(updatedSession);
+    };
+    // Sidebar icons for demo (cycle through a few for variety)
+    const icons = [
+        <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="8" /></svg>,
+        <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><rect x="4" y="4" width="12" height="12" rx="3" /></svg>,
+        <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-1h2v1zm0-2H9V7h2v4z"/></svg>,
+        <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path d="M4 10h12M10 4v12" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
+    ];
+    return (
+        <>
+            <div className="flex flex-col h-full w-100 bg-neutral-950 border-r border-neutral-800">
+                <div className="flex items-center gap-2 px-5 py-4 border-b border-neutral-800">
+                    <span className="text-base font-bold whitespace-nowrap text-white">Health Agent</span>
+                    <span className="ml-2 px-3 py-1 rounded-lg bg-neutral-800 text-white font-semibold text-sm truncate max-w-[120px]" title={userId}>{userId}</span>
+                    <button className="ml-auto text-red-400 hover:text-red-300 font-semibold text-sm" onClick={onLogout}>Logout</button>
+                </div>
+                <div className="px-5 py-4 border-b border-neutral-800">
+                    <button onClick={createNewSession} className="w-full py-2 rounded-xl bg-white text-black font-semibold text-base hover:bg-neutral-200 transition">+ New Chat</button>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                    {loading ? (
+                        <div className="text-neutral-500 text-center py-8">Loading...</div>
+                    ) : error ? (
+                        <div className="text-red-400 text-center py-8">{error}<div className="mt-2 text-neutral-500">Try creating a new chat.</div></div>
+                    ) : sessions.length === 0 ? (
+                        <div className="text-neutral-500 text-center py-8">No conversations yet. Start a new chat!</div>
+                    ) : (
+                        <ul className="space-y-1 mt-2">
+                            {sessions.map((session, idx) => (
+                                <li
+                                    key={session.id}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition font-medium ${currentSession && currentSession.id === session.id ? 'bg-neutral-800 text-white' : 'text-neutral-300 hover:bg-neutral-900'}`}
+                                    onClick={() => openSession(session)}
+                                >
+                                    {icons[idx % icons.length]}
+                                    <span className="truncate flex-1">{session.title}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            </div>
+            <div className="flex-1 flex flex-col bg-black">
+                {currentSession ? (
+                    <ChatScreen session={currentSession} saveSession={saveSession} userId={userId} />
+                ) : (
+                    <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center">
+                            <h3 className="text-xl font-bold text-white mb-2">Welcome to the Health Agent Chat</h3>
+                            <div className="mb-4 text-neutral-400">Select a conversation from the sidebar or start a new chat</div>
+                            <button onClick={createNewSession} className="py-2 px-6 rounded-xl bg-white text-black font-semibold text-base hover:bg-neutral-200 transition">New Chat</button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </>
+    );
+}
+function ChatScreen({ session, saveSession, userId }) {
+    const [messageInput, setMessageInput] = useState("");
+    const [messages, setMessages] = useState([]);
+    const [isTyping, setIsTyping] = useState(false);
+    const [title, setTitle] = useState(session.title);
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [error, setError] = useState(null);
+    const messagesEndRef = useRef(null);
+    useEffect(() => {
+        setMessages(session.conversationHistory || []);
+        setTitle(session.title);
+    }, [session]);
+    useEffect(() => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [messages]);
+    const sendMessage = async (content) => {
+        if (!content.trim()) return;
+        const userMessage = { type: "user", message: content };
+        const updatedMessages = [...messages, userMessage];
+        setMessages(updatedMessages);
+        setError(null);
+        const updatedSession = {
+            ...session,
+            conversationHistory: updatedMessages,
+            timestamp: new Date().toISOString()
+        };
+        if (session.title === "New Conversation" && updatedMessages.length === 1) {
+            const newTitle = content.substring(0, 30) + (content.length > 30 ? "..." : "");
+            setTitle(newTitle);
+            updatedSession.title = newTitle;
+        }
+        saveSession(updatedSession);
+        setMessageInput("");
+        setIsTyping(true);
+        try {
+            const apiRequest = {
+                sessionId: session.id,
+                userId: userId,
+                question: content
+            };
+            const response = await fetch('/agent/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(apiRequest)
+            });
+            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let aiResponseText = "";
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n').filter(line => line.trim() !== '');
+                for (const line of lines) {
+                    let parsedData = parseSSE(line);
+                    if (parsedData) {
+                        try {
+                            if (parsedData.startsWith('"') && parsedData.endsWith('"')) {
+                                parsedData = JSON.parse(parsedData);
+                            }
+                        } catch (e) {}
+                        if (typeof parsedData === 'string') {
+                            parsedData = parsedData.replace(/"([^"]*)"\s*,\s*"([^"]*)"/g, '$1$2');
+                            parsedData = parsedData.replace(/^"|"$/g, '');
+                        }
+                        aiResponseText += parsedData;
+                        setMessages([
+                            ...updatedMessages,
+                            { type: "ai", message: aiResponseText }
+                        ]);
+                    }
+                }
+            }
+            setIsTyping(false);
+            const finalMessages = [
+                ...updatedMessages,
+                { type: "ai", message: aiResponseText }
+            ];
+            const apiSessionData = {
+                sessionId: session.id,
+                userId: userId,
+                messages: finalMessages.map(msg => ({
+                    origin: msg.type,
+                    message: msg.message,
+                    timestamp: new Date().getTime()
+                })),
+                creationDate: new Date(session.timestamp).getTime()
+            };
+            const finalSession = {
+                ...session,
+                conversationHistory: finalMessages,
+                timestamp: new Date().toISOString()
+            };
+            saveSession(finalSession);
+        } catch (err) {
+            setIsTyping(false);
+            setError("Failed to get a response. Please try again.");
+        }
+    };
+    const updateTitle = () => {
+        if (title.trim() !== session.title) {
+            const updatedSession = {
+                ...session,
+                title: title.trim()
+            };
+            saveSession(updatedSession);
+        }
+        setIsEditingTitle(false);
+    };
+    return (
+        <>
+            <div className="flex items-center px-8 py-4 border-b border-neutral-800 min-h-[60px]">
+                {isEditingTitle ? (
+                    <input
+                        type="text"
+                        value={title}
+                        onChange={e => setTitle(e.target.value)}
+                        autoFocus
+                        onBlur={updateTitle}
+                        onKeyPress={e => e.key === 'Enter' && updateTitle()}
+                        className="flex-1 px-3 py-2 rounded-lg border border-neutral-700 bg-black text-white text-lg focus:outline-none focus:ring-2 focus:ring-white"
+                    />
+                ) : (
+                    <h2 onClick={() => setIsEditingTitle(true)} title="Click to edit conversation title" className="text-lg font-bold text-white cursor-pointer truncate">{title}</h2>
+                )}
+            </div>
+            <div className="flex-1 overflow-y-auto px-0 py-8 bg-black">
+                <div className="max-w-2xl mx-auto flex flex-col gap-6">
+                    {messages.length === 0 ? (
+                        <div className="text-neutral-500 text-center">Start a new conversation!</div>
+                    ) : (
+                        messages.map((msg, idx) => (
+                            <div key={idx} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`flex items-start gap-3 max-w-[80%] ${msg.type === 'user' ? 'flex-row-reverse' : ''}`}>
+                                    <span className="flex-shrink-0 w-9 h-9 rounded-full bg-neutral-800 flex items-center justify-center">
+                                        {msg.type === 'user' ? (
+                                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="7.5" r="4" fill="#fff"/><ellipse cx="11" cy="16.5" rx="7" ry="4.5" fill="#fff"/></svg>
+                                        ) : (
+                                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="14" height="14" rx="7" fill="#fff"/><path d="M8 12h6M11 8v8" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                                        )}
+                                    </span>
+                                    <div className={`rounded-2xl px-5 py-4 shadow ${msg.type === 'user' ? 'bg-neutral-900 text-white border border-neutral-800' : 'bg-neutral-800 text-white border border-neutral-700'} text-base`} style={{wordBreak: 'break-word'}}>
+                                        <span dangerouslySetInnerHTML={{ __html: marked.parse(msg.message) }}></span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                    {isTyping && (
+                        <div className="flex justify-start">
+                            <div className="flex items-start gap-3 max-w-[80%]">
+                                <span className="flex-shrink-0 w-9 h-9 rounded-full bg-neutral-800 flex items-center justify-center">
+                                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="14" height="14" rx="7" fill="#fff"/><path d="M8 12h6M11 8v8" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                                </span>
+                                <div className="rounded-2xl px-5 py-4 shadow bg-neutral-800 text-white border border-neutral-700 text-base typing-animation min-w-[40px] min-h-[32px]"></div>
+                            </div>
+                        </div>
+                    )}
+                    {error && <div className="text-red-500 text-center text-sm">{error}</div>}
+                    <div ref={messagesEndRef} />
+                </div>
+            </div>
+            <div className="fixed left-80 right-0 bottom-0 z-10 bg-transparent flex justify-center pointer-events-none">
+                <div className="w-full max-w-2xl mx-auto mb-8 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-xl flex items-end px-4 py-3 pointer-events-auto">
+                    <textarea
+                        placeholder="Type your message..."
+                        rows={2}
+                        value={messageInput}
+                        onChange={e => setMessageInput(e.target.value)}
+                        onKeyPress={e => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                sendMessage(messageInput);
+                            }
+                        }}
+                        disabled={isTyping}
+                        className="flex-1 resize-none bg-transparent text-white text-base px-2 py-2 border-none outline-none font-medium"
+                    />
+                    <button className="ml-3 px-4 py-2 rounded-xl bg-white text-black font-bold text-lg hover:bg-neutral-200 transition disabled:bg-neutral-800 disabled:text-neutral-500" onClick={() => sendMessage(messageInput)} disabled={isTyping || !messageInput.trim()}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                    </button>
+                </div>
+            </div>
+        </>
+    );
+}
+ReactDOM.render(<App />, document.getElementById('root'));
+</script>
+</body>
+</html> 
