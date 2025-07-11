@@ -1,7 +1,7 @@
 package io.akka.health;
 
 import akka.javasdk.http.HttpClientProvider;
-import dev.langchain4j.store.embedding.EmbeddingStore;
+import com.typesafe.config.Config;
 import dev.langchain4j.store.embedding.mongodb.MongoDbEmbeddingStore;
 import io.akka.health.agent.application.MedicalRecordRAG;
 import io.akka.health.common.MongoDbUtils;
@@ -21,17 +21,17 @@ public class Bootstrap implements ServiceSetup {
   private final FitbitClient fitbitClient;
   private final MongoDbEmbeddingStore embeddingStore;
 
-  public Bootstrap(HttpClientProvider httpClientProvider) {
+  public Bootstrap(Config config, HttpClientProvider httpClientProvider) {
     String mongodbAtlasUri = System.getenv("MONGODB_ATLAS_URI");
     if (mongodbAtlasUri == null) {
       logger.error("MONGODB_ATLAS_URI environment variable is not set.");
       throw new RuntimeException("MONGODB_ATLAS_URI environment variable is not set.");
     }
 
-    String openaiApiKey = System.getenv("OPENAI_API_KEY");
-    if (openaiApiKey == null) {
-        logger.error("OPENAI_API_KEY environment variable is not set.");
-      throw new RuntimeException("OPENAI_API_KEY environment variable is not set.");
+    if (config.getString("akka.javasdk.agent.model-provider").equals("openai")
+      && config.getString("akka.javasdk.agent.openai.api-key").isBlank()) {
+      throw new IllegalStateException(
+        "No API keys found. Make sure you have OPENAI_API_KEY defined as environment variable, or change the model provider configuration in application.conf to use a different LLM.");
     }
 
     String fitbitAccessToken = System.getenv("FITBIT_ACCESS_TOKEN");

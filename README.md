@@ -88,16 +88,18 @@ Execute reliably. Durable workflows that ensure agent actions and LLM calls exec
 ## Usage
 
 Setup Environment Variables
-```text
-OPENAI_API_KEY=YOUR-OPENAI-API-KEY-HERE
+```shell
+export OPENAI_API_KEY=YOUR-OPENAI-API-KEY-HERE
 
-MONGODB_ATLAS_URI=YOUR-CONNECTION-STRING-HERE
+export MONGODB_ATLAS_URI=YOUR-CONNECTION-STRING-HERE
 
 # Fitbit Access Token
 # (FitBits API does not support client credentials flow, so you need to use the authorization code flow that requires user interaction.)
 # Retrieve your Tokens manually via https://dev.fitbit.com/build/reference/web-api/troubleshooting-guide/oauth2-tutorial/
-FITBIT_ACCESS_TOKEN=YOUR-FITBIT-ACCESS-TOKEN
+export FITBIT_ACCESS_TOKEN=YOUR-FITBIT-ACCESS-TOKEN
 ```
+
+Alternatively, change the `application.conf` file to use a different model provider.
 
 Start the service locally:
 ```shell
