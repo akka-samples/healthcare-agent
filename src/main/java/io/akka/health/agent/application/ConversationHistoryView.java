@@ -2,7 +2,7 @@
 package io.akka.health.agent.application;
 
 import akka.javasdk.agent.SessionMemoryEntity;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 // tag::top[]
-@ComponentId("view_chat_log")
+@Component(id = "view_chat_log")
 public class ConversationHistoryView extends View {
 
   public record ConversationHistory(List<Session> sessions) {

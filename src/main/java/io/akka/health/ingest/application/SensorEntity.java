@@ -1,7 +1,7 @@
 package io.akka.health.ingest.application;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import io.akka.health.ingest.domain.SensorData;
@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.List;
 
 
-@ComponentId("sensor-entity")
+@Component(id = "sensor-entity")
 public class SensorEntity extends EventSourcedEntity<SensorEntity.State, SensorEntity.Event> {
 
   public record State(String id, List<SensorData> data) {}
