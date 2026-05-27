@@ -3,8 +3,7 @@ package io.akka.health.agent.application;
 
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.MemoryProvider;
-import akka.javasdk.annotations.AgentDescription;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.client.ComponentClient;
 import io.akka.health.fitbit.FitbitClient;
@@ -18,8 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDate;
 import java.util.List;
 
-@ComponentId("health-agent")
-@AgentDescription(name = "Health Agent", description = "A personal health assistant with knowledge about the user's health data.")
+@Component(id = "health-agent", name = "Health Agent", description = "A personal health assistant with knowledge about the user's health data.")
 public class HealthAgent extends Agent {
 
   private final static Logger logger = LoggerFactory.getLogger(HealthAgent.class);

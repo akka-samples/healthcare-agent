@@ -1,6 +1,6 @@
 package io.akka.health.ingest.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Table;
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-@ComponentId("sensor-view")
+@Component(id = "sensor-view")
 public class SensorView extends View {
 
     private final static Logger logger = LoggerFactory.getLogger(SensorView.class);
